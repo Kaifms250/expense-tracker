@@ -9,7 +9,7 @@ import com.expensetracker.model.Goal;
  */
 public class GoalProgressTracker {
 
-    private static final double ON_TRACK_THRESHOLD = 0.90; // 90% of required pace
+    static final double ON_TRACK_THRESHOLD = 0.90; // 90% of required pace
     private static final double EPSILON = 0.001; // For floating-point comparison
 
     private final GoalCalculator goalCalculator;

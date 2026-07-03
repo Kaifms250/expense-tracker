@@ -4,6 +4,7 @@ import com.expensetracker.AppContext;
 import com.expensetracker.model.Budget;
 import com.expensetracker.model.Category;
 import com.expensetracker.model.Expense;
+import com.expensetracker.model.Goal;
 import com.expensetracker.model.MonthlyReport;
 import com.expensetracker.service.BudgetService;
 import com.sun.net.httpserver.HttpExchange;
@@ -45,6 +46,8 @@ public class ApiHandler implements HttpHandler {
                 handleBudgetStatus(exchange, method);
             } else if (path.startsWith("/api/budgets")) {
                 handleBudgets(exchange, path, method);
+            } else if (path.startsWith("/api/goals")) {
+                handleGoals(exchange, path, method);
             } else if (path.startsWith("/api/reports")) {
                 handleReports(exchange, method);
             } else if (path.startsWith("/api/insights")) {
@@ -59,6 +62,96 @@ public class ApiHandler implements HttpHandler {
         } catch (Exception e) {
             HttpUtil.sendError(exchange, 500, "Internal server error");
         }
+    }
+
+    private void handleGoals(HttpExchange exchange, String path, String method) throws IOException {
+        // POST /api/goals/{id}/deposit - add savings to goal
+        if (path.startsWith("/api/goals/") && path.endsWith("/deposit") && "POST".equals(method)) {
+            String goalId = path.substring("/api/goals/".length(), path.length() - "/deposit".length());
+            DepositRequest req = HttpUtil.parseBody(exchange, DepositRequest.class);
+            Goal goal = app.goalService().addSavings(goalId, req.amount);
+            HttpUtil.sendJson(exchange, 200, goal);
+            return;
+        }
+
+        // GET /api/goals/{id} - return single goal
+        if (path.startsWith("/api/goals/") && "GET".equals(method)) {
+            String id = path.substring("/api/goals/".length());
+            Goal goal = app.goalService().getGoalById(id)
+                    .orElseThrow(() -> new IllegalArgumentException("Goal not found: " + id));
+            HttpUtil.sendJson(exchange, 200, goal);
+            return;
+        }
+
+        // DELETE /api/goals/{id} - delete goal
+        if (path.startsWith("/api/goals/") && "DELETE".equals(method)) {
+            String id = path.substring("/api/goals/".length());
+            if (app.goalService().deleteGoal(id)) {
+                HttpUtil.sendNoContent(exchange);
+            } else {
+                HttpUtil.sendError(exchange, 404, "Goal not found");
+            }
+            return;
+        }
+
+        // PUT /api/goals/{id} - update goal
+        if (path.startsWith("/api/goals/") && "PUT".equals(method)) {
+            String id = path.substring("/api/goals/".length());
+            GoalRequest req = HttpUtil.parseBody(exchange, GoalRequest.class);
+            Goal existingGoal = app.goalService().getGoalById(id)
+                    .orElseThrow(() -> new IllegalArgumentException("Goal not found: " + id));
+
+            // Update fields from request
+            if (req.name != null) {
+                existingGoal.setName(req.name);
+            }
+            if (req.targetAmount > 0) {
+                existingGoal.setTargetAmount(req.targetAmount);
+            }
+            if (req.currentSavings >= 0) {
+                existingGoal.setCurrentSavings(req.currentSavings);
+            }
+            if (req.targetDate != null && !req.targetDate.isBlank()) {
+                existingGoal.setTargetDate(LocalDate.parse(req.targetDate));
+            }
+            if (req.targetDurationMonths != null) {
+                existingGoal.setTargetDurationMonths(req.targetDurationMonths);
+            }
+
+            Goal updatedGoal = app.goalService().updateGoal(existingGoal);
+            HttpUtil.sendJson(exchange, 200, updatedGoal);
+            return;
+        }
+
+        // GET /api/goals - return all goals
+        if (path.equals("/api/goals") && "GET".equals(method)) {
+            List<Goal> goals = app.goalService().getAllGoals();
+            HttpUtil.sendJson(exchange, 200, goals);
+            return;
+        }
+
+        // POST /api/goals - create new goal
+        if (path.equals("/api/goals") && "POST".equals(method)) {
+            GoalRequest req = HttpUtil.parseBody(exchange, GoalRequest.class);
+            Goal goal;
+            if (req.targetDate != null && !req.targetDate.isBlank()) {
+                goal = app.goalService().createGoal(
+                        req.name, req.targetAmount,
+                        req.currentSavings > 0 ? req.currentSavings : 0.0,
+                        LocalDate.parse(req.targetDate), null);
+            } else if (req.targetDurationMonths != null) {
+                goal = app.goalService().createGoalWithDuration(
+                        req.name, req.targetAmount,
+                        req.currentSavings > 0 ? req.currentSavings : 0.0,
+                        req.targetDurationMonths);
+            } else {
+                throw new IllegalArgumentException("Either targetDate or targetDurationMonths is required.");
+            }
+            HttpUtil.sendJson(exchange, 201, goal);
+            return;
+        }
+
+        HttpUtil.sendError(exchange, 405, "Method not allowed");
     }
 
     private void handleCategories(HttpExchange exchange, String path, String method) throws IOException {
@@ -264,5 +357,17 @@ public class ApiHandler implements HttpHandler {
     private static class SettingsRequest {
         double monthlyIncome;
         String userName;
+    }
+
+    private static class GoalRequest {
+        String name;
+        double targetAmount;
+        double currentSavings;
+        String targetDate;
+        Integer targetDurationMonths;
+    }
+
+    private static class DepositRequest {
+        double amount;
     }
 }

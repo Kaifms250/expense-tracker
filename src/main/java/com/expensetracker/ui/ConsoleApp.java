@@ -3,10 +3,13 @@ package com.expensetracker.ui;
 import com.expensetracker.model.Category;
 import com.expensetracker.model.CategorySummary;
 import com.expensetracker.model.Expense;
+import com.expensetracker.model.Goal;
+import com.expensetracker.model.GoalSummary;
 import com.expensetracker.model.MonthlyReport;
 import com.expensetracker.service.BudgetService;
 import com.expensetracker.service.CategoryService;
 import com.expensetracker.service.ExpenseService;
+import com.expensetracker.service.GoalService;
 import com.expensetracker.service.ReportService;
 
 import java.time.LocalDate;
@@ -26,17 +29,20 @@ public class ConsoleApp {
     private final CategoryService categoryService;
     private final BudgetService budgetService;
     private final ReportService reportService;
+    private final GoalService goalService;
 
     public ConsoleApp(Scanner scanner,
                       ExpenseService expenseService,
                       CategoryService categoryService,
                       BudgetService budgetService,
-                      ReportService reportService) {
+                      ReportService reportService,
+                      GoalService goalService) {
         this.scanner = scanner;
         this.expenseService = expenseService;
         this.categoryService = categoryService;
         this.budgetService = budgetService;
         this.reportService = reportService;
+        this.goalService = goalService;
     }
 
     public void run() {
@@ -51,7 +57,8 @@ public class ConsoleApp {
                 case 1 -> handleExpensesMenu();
                 case 2 -> handleCategoriesMenu();
                 case 3 -> handleBudgetsMenu();
-                case 4 -> handleMonthlyReport();
+                case 4 -> handleGoalsMenu();
+                case 5 -> handleMonthlyReport();
                 case 0 -> {
                     System.out.println("\nGoodbye! Keep tracking your spending.\n");
                     running = false;
@@ -75,7 +82,8 @@ public class ConsoleApp {
         System.out.println("1. Expenses");
         System.out.println("2. Categories");
         System.out.println("3. Budgets");
-        System.out.println("4. Monthly Report");
+        System.out.println("4. Goals");
+        System.out.println("5. Monthly Report");
         System.out.println("0. Exit");
     }
 
@@ -280,6 +288,255 @@ public class ConsoleApp {
             System.out.println("No budget found for that category.");
         }
     }
+
+    // ── Goals Menu ────────────────────────────────────────────────────────────
+
+    private void handleGoalsMenu() {
+        boolean back = false;
+        while (!back) {
+            System.out.println("\n--- Goals ---");
+            System.out.println("1. View all goals");
+            System.out.println("2. Create new goal");
+            System.out.println("3. Add savings to goal");
+            System.out.println("4. Update goal details");
+            System.out.println("5. Delete goal");
+            System.out.println("0. Back");
+
+            int choice = readInt("Choose an option: ");
+            switch (choice) {
+                case 1 -> viewAllGoals();
+                case 2 -> createNewGoal();
+                case 3 -> addSavingsToGoal();
+                case 4 -> updateGoalDetails();
+                case 5 -> deleteGoal();
+                case 0 -> back = true;
+                default -> System.out.println("Invalid option.");
+            }
+        }
+    }
+
+    private void viewAllGoals() {
+        List<Goal> goals = goalService.getAllGoals();
+        System.out.println("\n--- Your Savings Goals ---");
+        if (goals.isEmpty()) {
+            System.out.println("No goals found. Create your first goal!");
+            return;
+        }
+
+        // Summary
+        com.expensetracker.model.GoalSummary summary = goalService.getGoalSummary();
+        System.out.printf("  Total Target: ₹%.2f  |  Total Saved: ₹%.2f  |  Overall: %.0f%%%n%n",
+                summary.getTotalTargetAmount(),
+                summary.getTotalSavedAmount(),
+                summary.getOverallProgressPercent());
+
+        for (int i = 0; i < goals.size(); i++) {
+            Goal g = goals.get(i);
+            String statusLabel = switch (g.getStatus()) {
+                case ACHIEVED       -> "✅ Achieved";
+                case BEHIND_SCHEDULE -> "⚠️  Behind";
+                default             -> "✅ On Track";
+            };
+            System.out.printf("  [%d] %s %s%n", i + 1, g.getIcon(), g.getName());
+            System.out.printf("      Progress : %.0f%%  (₹%.2f / ₹%.2f)%n",
+                    g.getProgressPercent(), g.getCurrentSavings(), g.getTargetAmount());
+            System.out.printf("      Monthly  : ₹%.2f/mo   Days left: %d   Status: %s%n",
+                    g.getRequiredMonthlySavings(), g.getDaysRemaining(), statusLabel);
+            System.out.printf("      Recommendation: %s%n%n",
+                    goalService.getRecommendation(g.getId()));
+        }
+    }
+
+    private void createNewGoal() {
+        System.out.println("\n--- Create New Goal ---");
+        try {
+            System.out.print("Goal name: ");
+            String name = scanner.nextLine().trim();
+            if (name.isEmpty()) {
+                System.out.println("Goal name cannot be empty.");
+                return;
+            }
+
+            double targetAmount = readPositiveDouble("Target amount (₹): ");
+            System.out.print("Current savings (₹, Enter for 0): ");
+            String savingsInput = scanner.nextLine().trim();
+            double currentSavings = savingsInput.isEmpty() ? 0.0 : Double.parseDouble(savingsInput);
+
+            System.out.println("Deadline type:");
+            System.out.println("  1. Specific date (yyyy-MM-dd)");
+            System.out.println("  2. Duration in months");
+            int deadlineChoice = readInt("Choose: ");
+
+            Goal goal;
+            if (deadlineChoice == 1) {
+                LocalDate targetDate = readFutureDate("Target date (yyyy-MM-dd): ");
+                if (targetDate == null) return;
+                goal = goalService.createGoal(name, targetAmount, currentSavings, targetDate, null);
+            } else if (deadlineChoice == 2) {
+                int months = readInt("Duration (months, 1-600): ");
+                goal = goalService.createGoalWithDuration(name, targetAmount, currentSavings, months);
+            } else {
+                System.out.println("Invalid choice.");
+                return;
+            }
+
+            System.out.printf("%nGoal created: %s %s%n", goal.getIcon(), goal.getName());
+            System.out.printf("  Progress : %.0f%%  (₹%.2f / ₹%.2f)%n",
+                    goal.getProgressPercent(), goal.getCurrentSavings(), goal.getTargetAmount());
+            System.out.printf("  Required : ₹%.2f/month  |  Days left: %d%n",
+                    goal.getRequiredMonthlySavings(), goal.getDaysRemaining());
+
+        } catch (NumberFormatException e) {
+            System.out.println("Invalid number entered.");
+        } catch (IllegalArgumentException e) {
+            System.out.println("Error: " + e.getMessage());
+        }
+    }
+
+    private void addSavingsToGoal() {
+        List<Goal> goals = goalService.getAllGoals();
+        if (goals.isEmpty()) {
+            System.out.println("No goals found. Create a goal first.");
+            return;
+        }
+
+        System.out.println("\n--- Add Savings ---");
+        Goal selected = selectGoal(goals, "Select goal to add savings to");
+        if (selected == null) return;
+
+        try {
+            double amount = readPositiveDouble("Amount to add (₹): ");
+            Goal updated = goalService.addSavings(selected.getId(), amount);
+            System.out.printf("₹%.2f added to '%s'%n", amount, updated.getName());
+            System.out.printf("New balance: ₹%.2f / ₹%.2f (%.0f%%) — %s%n",
+                    updated.getCurrentSavings(),
+                    updated.getTargetAmount(),
+                    updated.getProgressPercent(),
+                    updated.getStatus());
+        } catch (IllegalArgumentException e) {
+            System.out.println("Error: " + e.getMessage());
+        }
+    }
+
+    private void updateGoalDetails() {
+        List<Goal> goals = goalService.getAllGoals();
+        if (goals.isEmpty()) {
+            System.out.println("No goals found.");
+            return;
+        }
+
+        System.out.println("\n--- Update Goal ---");
+        Goal selected = selectGoal(goals, "Select goal to update");
+        if (selected == null) return;
+
+        System.out.println("What would you like to update?");
+        System.out.println("  1. Target amount");
+        System.out.println("  2. Current savings");
+        System.out.println("  3. Target date");
+        System.out.println("  0. Cancel");
+
+        int choice = readInt("Choose: ");
+        try {
+            switch (choice) {
+                case 1 -> {
+                    double newTarget = readPositiveDouble("New target amount (₹): ");
+                    Goal updated = goalService.updateTargetAmount(selected.getId(), newTarget);
+                    System.out.printf("Target updated to ₹%.2f. Monthly required: ₹%.2f%n",
+                            updated.getTargetAmount(), updated.getRequiredMonthlySavings());
+                }
+                case 2 -> {
+                    double newSavings = readPositiveDouble("New current savings (₹): ");
+                    Goal updated = goalService.updateCurrentSavings(selected.getId(), newSavings);
+                    System.out.printf("Savings updated to ₹%.2f (%.0f%%)%n",
+                            updated.getCurrentSavings(), updated.getProgressPercent());
+                }
+                case 3 -> {
+                    LocalDate newDate = readFutureDate("New target date (yyyy-MM-dd): ");
+                    if (newDate == null) return;
+                    Goal updated = goalService.updateTargetDate(selected.getId(), newDate);
+                    System.out.printf("Target date updated to %s. Monthly required: ₹%.2f%n",
+                            updated.getTargetDate(), updated.getRequiredMonthlySavings());
+                }
+                case 0 -> System.out.println("Cancelled.");
+                default -> System.out.println("Invalid option.");
+            }
+        } catch (IllegalArgumentException e) {
+            System.out.println("Error: " + e.getMessage());
+        }
+    }
+
+    private void deleteGoal() {
+        List<Goal> goals = goalService.getAllGoals();
+        if (goals.isEmpty()) {
+            System.out.println("No goals found.");
+            return;
+        }
+
+        System.out.println("\n--- Delete Goal ---");
+        Goal selected = selectGoal(goals, "Select goal to delete");
+        if (selected == null) return;
+
+        System.out.printf("Delete '%s'? (y/n): ", selected.getName());
+        String confirm = scanner.nextLine().trim();
+        if (!confirm.equalsIgnoreCase("y")) {
+            System.out.println("Cancelled.");
+            return;
+        }
+
+        if (goalService.deleteGoal(selected.getId())) {
+            System.out.println("Goal deleted: " + selected.getName());
+        } else {
+            System.out.println("Failed to delete goal.");
+        }
+    }
+
+    private Goal selectGoal(List<Goal> goals, String prompt) {
+        System.out.println("\n" + prompt + ":");
+        for (int i = 0; i < goals.size(); i++) {
+            Goal g = goals.get(i);
+            System.out.printf("  %d. %s %s  (%.0f%% — ₹%.2f/₹%.2f)%n",
+                    i + 1, g.getIcon(), g.getName(),
+                    g.getProgressPercent(), g.getCurrentSavings(), g.getTargetAmount());
+        }
+        int choice = readInt("Enter number: ");
+        if (choice < 1 || choice > goals.size()) {
+            System.out.println("Invalid selection.");
+            return null;
+        }
+        return goals.get(choice - 1);
+    }
+
+    private double readPositiveDouble(String prompt) {
+        while (true) {
+            System.out.print(prompt);
+            String input = scanner.nextLine().trim();
+            try {
+                double val = Double.parseDouble(input);
+                if (val > 0) return val;
+                System.out.println("Please enter a value greater than zero.");
+            } catch (NumberFormatException e) {
+                System.out.println("Please enter a valid amount.");
+            }
+        }
+    }
+
+    private LocalDate readFutureDate(String prompt) {
+        System.out.print(prompt);
+        String input = scanner.nextLine().trim();
+        try {
+            LocalDate date = LocalDate.parse(input, DATE_FORMAT);
+            if (!date.isAfter(LocalDate.now())) {
+                System.out.println("Date must be in the future.");
+                return null;
+            }
+            return date;
+        } catch (DateTimeParseException e) {
+            System.out.println("Invalid date format. Use yyyy-MM-dd.");
+            return null;
+        }
+    }
+
+    // ── Monthly Report ────────────────────────────────────────────────────────
 
     private void handleMonthlyReport() {
         YearMonth month = readMonth("Report month (yyyy-MM, Enter for current): ", YearMonth.now());

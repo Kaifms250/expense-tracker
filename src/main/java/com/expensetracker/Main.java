@@ -18,7 +18,8 @@ public class Main {
                     app.expenseService(),
                     app.categoryService(),
                     app.budgetService(),
-                    app.reportService());
+                    app.reportService(),
+                    app.goalService());
             console.run();
             return;
         }

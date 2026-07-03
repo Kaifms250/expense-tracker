@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart Expense Tracker</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="bg-glow"></div>
+  <div class="app">
+    <!-- Welcome Header -->
+    <header class="welcome-header glass">
+      <div class="welcome-left">
+        <div class="avatar" id="user-avatar">U</div>
+        <div>
+          <p class="greeting">Good <span id="time-of-day">evening</span>,</p>
+          <h1 id="user-name">User</h1>
+        </div>
+      </div>
+      <div class="welcome-right">
+        <div class="month-picker">
+          <label for="report-month">Viewing</label>
+          <input type="month" id="report-month">
+        </div>
+        <button class="btn-icon" id="settings-btn" title="Settings">⚙</button>
+      </div>
+    </header>
+
+    <nav class="tabs">
+      <button class="tab active" data-tab="dashboard">Dashboard</button>
+      <button class="tab" data-tab="expenses">Expenses</button>
+      <button class="tab" data-tab="categories">Categories</button>
+      <button class="tab" data-tab="budgets">Budgets</button>
+    </nav>
+
+    <main>
+      <!-- Dashboard -->
+      <section id="dashboard" class="panel active">
+        <!-- Smart Spending Insights — Hero -->
+        <div class="insights-hero glass" id="insights-panel">
+          <div class="insights-header">
+            <span class="insights-icon">💡</span>
+            <div>
+              <h2>Smart Spending Insights</h2>
+              <p class="insights-sub">Personalized recommendations from your spending data</p>
+            </div>
+          </div>
+          <div id="insights-list" class="insights-list"></div>
+          <div class="savings-badge" id="savings-badge"></div>
+        </div>
+
+        <!-- Stats Row -->
+        <div class="stats-row">
+          <div class="stat-card glass highlight">
+            <span class="stat-icon">📊</span>
+            <span class="stat-label">Total Expenses</span>
+            <span class="stat-value" id="stat-total">₹0.00</span>
+            <span class="stat-meta" id="stat-change-meta">—</span>
+          </div>
+          <div class="stat-card glass">
+            <span class="stat-icon">🎯</span>
+            <span class="stat-label">Monthly Budget</span>
+            <span class="stat-value" id="stat-budget">₹0.00</span>
+            <div class="mini-progress">
+              <div class="mini-progress-fill" id="budget-util-bar"></div>
+            </div>
+            <span class="stat-meta" id="stat-budget-meta">0% utilized</span>
+          </div>
+          <div class="stat-card glass">
+            <span class="stat-icon">🧾</span>
+            <span class="stat-label">Transactions</span>
+            <span class="stat-value" id="stat-count">0</span>
+            <span class="stat-meta" id="stat-income-meta">Set income in settings</span>
+          </div>
+        </div>
+
+        <div class="dashboard-grid">
+          <!-- Category Breakdown -->
+          <div class="card glass">
+            <h3>Category Breakdown</h3>
+            <div id="category-breakdown" class="breakdown-list"></div>
+          </div>
+
+          <!-- Spending Trends Chart -->
+          <div class="card glass">
+            <h3>Spending Trends</h3>
+            <div id="trend-chart" class="trend-chart"></div>
+          </div>
+        </div>
+
+        <!-- Monthly Report -->
+        <div class="card glass report-card">
+          <h3>Monthly Report</h3>
+          <p id="monthly-summary" class="monthly-summary">Loading...</p>
+          <div class="report-highlights" id="report-highlights"></div>
+        </div>
+
+        <!-- Recent Transactions -->
+        <div class="card glass">
+          <div class="card-header">
+            <h3>Recent Transactions</h3>
+            <a href="#" class="link" data-tab-link="expenses">View all →</a>
+          </div>
+          <div id="recent-transactions" class="transactions-list"></div>
+        </div>
+      </section>
+
+      <!-- Expenses -->
+      <section id="expenses" class="panel">
+        <div class="card glass">
+          <h3>Add Expense</h3>
+          <form id="expense-form" class="form-grid">
+            <div class="field">
+              <label for="expense-amount">Amount (₹)</label>
+              <input type="number" id="expense-amount" step="0.01" min="0.01" required placeholder="0.00">
+            </div>
+            <div class="field">
+              <label for="expense-category">Category</label>
+              <select id="expense-category" required></select>
+            </div>
+            <div class="field">
+              <label for="expense-date">Date</label>
+              <input type="date" id="expense-date" required>
+            </div>
+            <div class="field field-wide">
+              <label for="expense-description">Description</label>
+              <input type="text" id="expense-description" placeholder="e.g. Swiggy delivery, Uber ride">
+            </div>
+            <div class="field-actions">
+              <button type="submit" class="btn btn-primary">Add expense</button>
+            </div>
+          </form>
+        </div>
+        <div class="card glass">
+          <div class="card-header">
+            <h3>All Expenses</h3>
+            <label class="toggle">
+              <input type="checkbox" id="filter-month"> This month only
+            </label>
+          </div>
+          <div id="expense-list" class="table-wrap"></div>
+        </div>
+      </section>
+
+      <!-- Categories -->
+      <section id="categories" class="panel">
+        <div class="card glass">
+          <h3>Add Category</h3>
+          <form id="category-form" class="inline-form">
+            <input type="text" id="category-name" placeholder="Category name" required>
+            <button type="submit" class="btn btn-primary">Add</button>
+          </form>
+        </div>
+        <div class="card glass">
+          <h3>Your Categories</h3>
+          <div id="category-list" class="tag-list"></div>
+        </div>
+      </section>
+
+      <!-- Budgets -->
+      <section id="budgets" class="panel">
+        <div class="card glass">
+          <h3>Set Monthly Budget</h3>
+          <form id="budget-form" class="form-grid">
+            <div class="field">
+              <label for="budget-category">Category</label>
+              <select id="budget-category" required></select>
+            </div>
+            <div class="field">
+              <label for="budget-limit">Monthly limit (₹)</label>
+              <input type="number" id="budget-limit" step="0.01" min="0.01" required placeholder="0.00">
+            </div>
+            <div class="field-actions">
+              <button type="submit" class="btn btn-primary">Save budget</button>
+            </div>
+          </form>
+        </div>
+        <div class="card glass">
+          <h3>Active Budgets</h3>
+          <div id="budget-list" class="table-wrap"></div>
+        </div>
+        <div class="card glass">
+          <h3>Budget Status</h3>
+          <div id="budget-status" class="budget-list"></div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Settings Modal -->
+    <div id="settings-modal" class="modal hidden">
+      <div class="modal-backdrop"></div>
+      <div class="modal-content glass">
+        <h3>Profile Settings</h3>
+        <form id="settings-form">
+          <div class="field">
+            <label for="settings-name">Your name</label>
+            <input type="text" id="settings-name" placeholder="Your name">
+          </div>
+          <div class="field">
+            <label for="settings-income">Monthly income (₹)</label>
+            <input type="number" id="settings-income" step="1000" min="0" placeholder="50000">
+            <small class="field-hint">Used for income-based spending insights</small>
+          </div>
+          <div class="modal-actions">
+            <button type="button" class="btn btn-ghost" id="settings-cancel">Cancel</button>
+            <button type="submit" class="btn btn-primary">Save</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div id="toast" class="toast hidden"></div>
+  </div>
+
+  <script src="/js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,49 @@
+Here’s how to run Smart Expense Tracker on your machine.
+
+Prerequisites
+You need Java 17 or newer. Check with:
+
+java -version
+Steps (web app — recommended)
+1. Open a terminal in the project folder:
+
+C:\my-project\java expense tracker
+2. Build the project (first time, or after any code changes):
+
+.\compile.bat
+This compiles Java files, downloads Gson if needed, and copies the web UI files.
+
+3. Start the server:
+
+.\run.bat
+4. Open the app in your browser:
+
+http://localhost:8080
+5. Keep the terminal open while using the app. Press Ctrl+C to stop the server.
+
+First-time setup in the app
+Click ⚙ Settings → set your name and monthly income (for income-based insights).
+Add expenses on the Expenses tab.
+Set budgets on the Budgets tab.
+View Smart Spending Insights on the Dashboard.
+Other run options
+Custom port (if 8080 is busy):
+
+java -cp "target\classes;lib\gson-2.11.0.jar" com.expensetracker.Main 8081
+Then open http://localhost:8081.
+
+Console mode (text menu, no browser):
+
+java -cp "target\classes;lib\gson-2.11.0.jar" com.expensetracker.Main console
+Troubleshooting
+Problem	Fix
+Classes not found. Run compile.bat first.
+Run .\compile.bat
+Address already in use
+Stop the other server (Ctrl+C) or use a different port
+Page doesn’t load
+Make sure the terminal is still running and you’re using the correct port
+Where data is saved
+Your expenses, categories, budgets, and settings are stored at:
+
+%USERPROFILE%\.smart-expense-tracker\

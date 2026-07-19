@@ -5,6 +5,7 @@ import com.expensetracker.repository.CategoryRepository;
 import com.expensetracker.repository.ExpenseRepository;
 import com.expensetracker.repository.GoalRepository;
 import com.expensetracker.repository.SettingsRepository;
+import com.expensetracker.service.AnalyticsService;
 import com.expensetracker.service.BudgetService;
 import com.expensetracker.service.CategoryService;
 import com.expensetracker.service.ExpenseService;
@@ -22,19 +23,22 @@ public class AppContext {
     private final ReportService reportService;
     private final InsightsService insightsService;
     private final GoalService goalService;
+    private final AnalyticsService analyticsService;
 
     private AppContext(CategoryService categoryService,
                        ExpenseService expenseService,
                        BudgetService budgetService,
                        ReportService reportService,
                        InsightsService insightsService,
-                       GoalService goalService) {
+                       GoalService goalService,
+                       AnalyticsService analyticsService) {
         this.categoryService = categoryService;
         this.expenseService = expenseService;
         this.budgetService = budgetService;
         this.reportService = reportService;
         this.insightsService = insightsService;
         this.goalService = goalService;
+        this.analyticsService = analyticsService;
     }
 
     public static AppContext create() {
@@ -54,8 +58,11 @@ public class AppContext {
                 categoryRepository, expenseRepository, budgetRepository, settingsRepository);
         GoalCalculator goalCalculator = new GoalCalculator();
         GoalService goalService = new GoalService(goalRepository, goalCalculator);
+        AnalyticsService analyticsService = new AnalyticsService(
+                categoryRepository, expenseRepository, budgetRepository, settingsRepository);
 
-        return new AppContext(categoryService, expenseService, budgetService, reportService, insightsService, goalService);
+        return new AppContext(categoryService, expenseService, budgetService, reportService,
+                insightsService, goalService, analyticsService);
     }
 
     public CategoryService categoryService() {
@@ -80,5 +87,9 @@ public class AppContext {
 
     public GoalService goalService() {
         return goalService;
+    }
+
+    public AnalyticsService analyticsService() {
+        return analyticsService;
     }
 }

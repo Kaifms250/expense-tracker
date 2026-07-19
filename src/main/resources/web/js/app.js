@@ -71,6 +71,9 @@ function switchTab(name) {
   $$('.panel').forEach((p) => p.classList.remove('active'));
   $(`#${name}`).classList.add('active');
   refreshAll();
+  if (name === 'analytics' && typeof loadAnalyticsDashboard === 'function') {
+    loadAnalyticsDashboard().catch((err) => showToast(err.message, 'error'));
+  }
 }
 
 $('#report-month').addEventListener('change', refreshAll);
@@ -459,7 +462,12 @@ async function refreshAll() {
   try {
     await loadSettings();
     await loadCategories();
-    await Promise.all([loadDashboard(), loadExpenses(), loadBudgets()]);
+    const activeTab = document.querySelector('.tab.active')?.dataset.tab;
+    const tasks = [loadDashboard(), loadExpenses(), loadBudgets()];
+    if (activeTab === 'analytics' && typeof loadAnalyticsDashboard === 'function') {
+      tasks.push(loadAnalyticsDashboard());
+    }
+    await Promise.all(tasks);
   } catch (err) {
     showToast(err.message, 'error');
   }

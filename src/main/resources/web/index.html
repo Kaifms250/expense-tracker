@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Smart Expense Tracker</title>
   <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="/css/analytics.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -26,12 +27,14 @@
           <label for="report-month">Viewing</label>
           <input type="month" id="report-month">
         </div>
+        <button class="btn-icon" id="theme-toggle" title="Toggle theme">🌙</button>
         <button class="btn-icon" id="settings-btn" title="Settings">⚙</button>
       </div>
     </header>
 
     <nav class="tabs">
       <button class="tab active" data-tab="dashboard">Dashboard</button>
+      <button class="tab" data-tab="analytics">Analytics</button>
       <button class="tab" data-tab="expenses">Expenses</button>
       <button class="tab" data-tab="categories">Categories</button>
       <button class="tab" data-tab="budgets">Budgets</button>
@@ -178,6 +181,97 @@
         </div>
       </section>
 
+      <!-- Analytics Dashboard -->
+      <section id="analytics" class="panel">
+        <div class="analytics-header">
+          <div>
+            <h2 class="analytics-title">Monthly Analytics</h2>
+            <p class="analytics-subtitle">Financial insights powered by your expense data</p>
+          </div>
+        </div>
+
+        <!-- Top Summary KPI Cards -->
+        <div class="kpi-grid">
+          <div class="kpi-card glass">
+            <span class="kpi-label">Total Expenses</span>
+            <span class="kpi-value" id="an-total-expenses">₹0</span>
+            <span class="kpi-trend" id="an-expense-trend">—</span>
+          </div>
+          <div class="kpi-card glass">
+            <span class="kpi-label">Total Savings</span>
+            <span class="kpi-value success" id="an-total-savings">₹0</span>
+            <span class="kpi-meta" id="an-savings-rate">0% of income</span>
+          </div>
+          <div class="kpi-card glass">
+            <span class="kpi-label">Net Balance</span>
+            <span class="kpi-value" id="an-net-balance">₹0</span>
+            <span class="kpi-meta" id="an-income-label">Income: ₹0</span>
+          </div>
+          <div class="kpi-card glass">
+            <span class="kpi-label">Budget Utilization</span>
+            <div class="ring-wrap">
+              <svg class="progress-ring" viewBox="0 0 80 80">
+                <circle class="ring-bg" cx="40" cy="40" r="34"/>
+                <circle class="ring-fill" id="an-budget-ring" cx="40" cy="40" r="34"/>
+              </svg>
+              <span class="ring-label" id="an-budget-pct">0%</span>
+            </div>
+            <span class="status-badge" id="an-budget-status">—</span>
+          </div>
+        </div>
+
+        <!-- Charts Row -->
+        <div class="analytics-grid-2">
+          <div class="card glass">
+            <h3>Monthly Spending Trend</h3>
+            <div id="an-line-chart" class="line-chart"></div>
+          </div>
+          <div class="card glass">
+            <h3>Expense Distribution</h3>
+            <div class="doughnut-wrap">
+              <div id="an-doughnut" class="doughnut-chart"></div>
+              <div id="an-doughnut-legend" class="doughnut-legend"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Top Categories + Budget -->
+        <div class="analytics-grid-2">
+          <div class="card glass">
+            <h3>Top 5 Categories</h3>
+            <div id="an-top-categories" class="top-categories"></div>
+          </div>
+          <div class="card glass">
+            <h3>Budget Utilization by Category</h3>
+            <div id="an-budget-bars" class="budget-bars"></div>
+          </div>
+        </div>
+
+        <!-- Financial Statistics -->
+        <div class="card glass">
+          <h3>Financial Statistics</h3>
+          <div class="stats-grid-analytics" id="an-statistics"></div>
+        </div>
+
+        <!-- Smart Insights + Recommendations -->
+        <div class="analytics-grid-2">
+          <div class="card glass insights-card-an">
+            <h3>💡 Smart Insights</h3>
+            <div id="an-smart-insights" class="insights-list-an"></div>
+          </div>
+          <div class="card glass">
+            <h3>📋 Recommendations</h3>
+            <div id="an-recommendations" class="recommendations-list"></div>
+          </div>
+        </div>
+
+        <!-- Recent Analytics -->
+        <div class="card glass">
+          <h3>Recent Analytics</h3>
+          <div class="stats-grid-analytics" id="an-recent"></div>
+        </div>
+      </section>
+
       <!-- Expenses -->
       <section id="expenses" class="panel">
         <div class="card glass">
@@ -295,6 +389,7 @@
   </div>
 
   <script src="/js/app.js"></script>
+  <script src="/js/analytics-dashboard.js"></script>
   <script src="/js/goal-planner.js"></script>
 </body>
 </html>

@@ -54,6 +54,8 @@ public class ApiHandler implements HttpHandler {
                 handleInsights(exchange, method);
             } else if (path.startsWith("/api/settings")) {
                 handleSettings(exchange, method);
+            } else if (path.startsWith("/api/analytics")) {
+                handleAnalytics(exchange, method);
             } else {
                 HttpUtil.sendError(exchange, 404, "Not found");
             }
@@ -289,6 +291,15 @@ public class ApiHandler implements HttpHandler {
             return;
         }
         HttpUtil.sendError(exchange, 405, "Method not allowed");
+    }
+
+    private void handleAnalytics(HttpExchange exchange, String method) throws IOException {
+        if (!"GET".equals(method)) {
+            HttpUtil.sendError(exchange, 405, "Method not allowed");
+            return;
+        }
+        YearMonth month = resolveMonth(HttpUtil.queryParams(exchange).get("month"));
+        HttpUtil.sendJson(exchange, 200, app.analyticsService().getMonthlyDashboard(month));
     }
 
     private void handleReports(HttpExchange exchange, String method) throws IOException {
